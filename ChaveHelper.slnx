@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/FinancialService/FinancialService.csproj" />
+    <Project Path="backend/IdentityService/IdentityService.csproj" />
+    <Project Path="backend/OperationsService/OperationsService.csproj" />
+  </Folder>
+</Solution>

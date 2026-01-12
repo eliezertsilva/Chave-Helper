@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Chave Pado 682",
+    "price": 5.50,
+    "stock": 150,
+    "category": "Fechaduras",
+    "description": "Chave de latão tipo Yale"
+  },
+  {
+    "name": "Fechadura Yale",
+    "price": 850.00,
+    "stock": 5,
+    "category": "Fechaduras",
+    "description": "Fechadura de alta segurança"
+  },
+   {
+    "name": "Cadeado 30mm",
+    "price": 35.00,
+    "stock": 45,
+    "category": "Cadeados",
+    "description": "Cadeado de latão maciço"
+  }
+]
