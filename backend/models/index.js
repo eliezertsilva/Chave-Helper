@@ -4,6 +4,15 @@ const Client = require('./Client');
 const Product = require('./Product');
 const Service = require('./Service');
 const Transaction = require('./Transaction');
+const ServiceItem = require('./ServiceItem');
+
+// Define associations
+Service.belongsToMany(Product, { through: ServiceItem });
+Product.belongsToMany(Service, { through: ServiceItem });
+ServiceItem.belongsTo(Service);
+ServiceItem.belongsTo(Product);
+Service.hasMany(ServiceItem);
+Product.hasMany(ServiceItem);
 
 const db = {
   sequelize,
@@ -12,6 +21,7 @@ const db = {
   Product,
   Service,
   Transaction,
+  ServiceItem,
 };
 
 module.exports = db;

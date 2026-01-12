@@ -8,6 +8,7 @@ const Clients = () => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [formData, setFormData] = useState({
@@ -33,6 +34,14 @@ const Clients = () => {
       setLoading(false);
     }
   };
+
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         client.document.includes(searchTerm) ||
+                         client.phone.includes(searchTerm);
+    const matchesStatus = statusFilter === '' || client.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const handleShow = (client = null) => {
     if (client) {
@@ -109,7 +118,10 @@ const Clients = () => {
               </InputGroup>
             </Col>
             <Col md={3}>
-              <Form.Select>
+              <Form.Select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <option value="">Todos os Status</option>
                 <option value="active">Ativos</option>
                 <option value="inactive">Inativos</option>
@@ -134,7 +146,7 @@ const Clients = () => {
               </tr>
             </thead>
             <tbody>
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <tr key={client.id}>
                   <td className="ps-4">
                     <div className="fw-bold">{client.name}</div>
@@ -143,12 +155,12 @@ const Clients = () => {
                   <td>{client.document}</td>
                   <td>
                     <div className="d-flex flex-column gap-1">
-                      <div className="d-flex align-items-center gap-2 text-muted small">
+                      <a href={`https://wa.me/55${client.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="d-flex align-items-center gap-2 text-decoration-none text-muted small">
                         <FaWhatsapp className="text-success" /> {client.phone}
-                      </div>
-                      <div className="d-flex align-items-center gap-2 text-muted small">
+                      </a>
+                      <a href={`mailto:${client.email}`} className="d-flex align-items-center gap-2 text-decoration-none text-muted small">
                         <FaEnvelope className="text-primary" /> {client.email}
-                      </div>
+                      </a>
                     </div>
                   </td>
                   <td><span className="text-truncate d-block" style={{maxWidth: '200px'}}>{client.address}</span></td>

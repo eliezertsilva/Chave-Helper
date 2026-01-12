@@ -7,6 +7,9 @@ const Inventory = () => {
   // Mock data
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [editingProduct, setEditingProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -32,31 +35,61 @@ const Inventory = () => {
     }
   };
 
-  const handleShow = () => setShowModal(true);
-  const handleClose = () => setShowModal(false);
+  const handleClose = () => {
+    setShowModal(false);
+    setEditingProduct(null);
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === '' || product.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleShow = (product = null) => {
+    if (product) {
+      setEditingProduct(product);
+      setFormData({
+        name: product.name,
+        description: product.description || '',
+        price: product.price,
+        stock: product.stock,
+        minStock: product.minStock,
+        category: product.category || ''
+      });
+    } else {
+      setEditingProduct(null);
+      setFormData({ name: '', description: '', price: '', stock: '', minStock: '', category: '' });
+    }
+    setShowModal(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await inventoryService.create(formData);
+      if (editingProduct) {
+        await inventoryService.update(editingProduct.id, formData);
+      } else {
+        await inventoryService.create(formData);
+      }
       loadProducts();
       handleClose();
-      setFormData({ name: '', description: '', price: '', stock: '', minStock: '', category: '' });
     } catch (error) {
-      alert('Erro ao cadastrar produto');
+      alert('Erro ao salvar produto');
     }
   };
 
-  const handleStockUpdate = async (id, newStock) => {
-    try {
-      await inventoryService.updateStock(id, newStock);
-      loadProducts();
-    } catch (error) {
-       alert('Erro ao atualizar estoque');
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
+      try {
+        await inventoryService.delete(id);
+        loadProducts();
+      } catch (error) {
+        alert('Erro ao excluir produto');
+      }
     }
   };
-
-  const [searchTerm, setSearchTerm] = useState('');
 
   const getStockStatus = (stock, min) => {
     if (stock <= 0) return <Badge bg="danger">Sem Estoque</Badge>;
@@ -127,7 +160,10 @@ const Inventory = () => {
               </InputGroup>
             </Col>
             <Col md={3}>
-              <Form.Select>
+              <Form.Select 
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
                 <option value="">Todas as Categorias</option>
                 <option value="Chaves">Chaves</option>
                 <option value="Fechaduras">Fechaduras</option>
@@ -153,7 +189,7 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.id}>
                   <td className="ps-4 fw-bold">{product.name}</td>
                   <td>{product.category}</td>
@@ -172,8 +208,8 @@ const Inventory = () => {
                   <td>{getStockStatus(product.stock, product.minStock)}</td>
                   <td>R$ {parseFloat(product.price || 0).toFixed(2).replace('.', ',')}</td>
                   <td className="text-end pe-4">
-                    <Button variant="link" className="text-secondary p-1"><FaEdit /></Button>
-                    <Button variant="link" className="text-danger p-1"><FaTrash /></Button>
+                    <Button variant="link" className="text-secondary p-1" onClick={() => handleShow(product)}><FaEdit /></Button>
+                    <Button variant="link" className="text-danger p-1" onClick={() => handleDelete(product.id)}><FaTrash /></Button>
                   </td>
                 </tr>
               ))}

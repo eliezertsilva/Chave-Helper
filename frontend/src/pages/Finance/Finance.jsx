@@ -39,30 +39,63 @@ const Finance = () => {
     }
   };
 
-  const handleShow = (type) => {
-    setTransactionType(type);
-    setFormData({ ...formData, type });
-    setShowModal(true);
-  };
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
-  const handleClose = () => setShowModal(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await financeService.create(formData);
-      loadData();
-      handleClose();
+  const handleShow = (type, transaction = null) => {
+    if (transaction) {
+      setEditingTransaction(transaction);
+      setTransactionType(transaction.type);
+      setFormData({
+        description: transaction.description,
+        value: transaction.value,
+        type: transaction.type,
+        status: transaction.status,
+        dueDate: transaction.dueDate.split('T')[0],
+        category: transaction.category
+      });
+    } else {
+      setEditingTransaction(null);
+      setTransactionType(type);
       setFormData({
         description: '',
         value: '',
-        type: 'income',
+        type: type,
         status: 'pending',
         dueDate: new Date().toISOString().split('T')[0],
         category: ''
       });
+    }
+    setShowModal(true);
+  };
+
+  const handleClose = () => {
+    setShowModal(false);
+    setEditingTransaction(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingTransaction) {
+        await financeService.update(editingTransaction.id, formData);
+      } else {
+        await financeService.create(formData);
+      }
+      loadData();
+      handleClose();
     } catch (error) {
       alert('Erro ao salvar transação');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await financeService.delete(id);
+        loadData();
+      } catch (error) {
+        alert('Erro ao excluir transação');
+      }
     }
   };
 
@@ -160,6 +193,7 @@ const Finance = () => {
                     <th>Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
+                    <th className="text-end pe-4">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,6 +204,10 @@ const Finance = () => {
                       <td>{new Date(item.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="text-danger fw-bold">- R$ {parseFloat(item.value).toFixed(2).replace('.', ',')}</td>
                       <td>{getStatusBadge(item.status)}</td>
+                      <td className="text-end pe-4">
+                        <Button variant="link" className="text-secondary p-1" onClick={() => handleShow('expense', item)}><FaEdit /></Button>
+                        <Button variant="link" className="text-danger p-1" onClick={() => handleDelete(item.id)}><FaTrash /></Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -184,6 +222,7 @@ const Finance = () => {
                     <th>Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
+                    <th className="text-end pe-4">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -193,6 +232,10 @@ const Finance = () => {
                       <td>{new Date(item.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="text-success fw-bold">+ R$ {parseFloat(item.value).toFixed(2).replace('.', ',')}</td>
                       <td>{getStatusBadge(item.status)}</td>
+                      <td className="text-end pe-4">
+                        <Button variant="link" className="text-secondary p-1" onClick={() => handleShow('income', item)}><FaEdit /></Button>
+                        <Button variant="link" className="text-danger p-1" onClick={() => handleDelete(item.id)}><FaTrash /></Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -204,7 +247,7 @@ const Finance = () => {
 
       <Modal show={showModal} onHide={handleClose}>
         <Modal.Header closeButton className="border-0">
-          <Modal.Title className="fw-bold">Nova {transactionType === 'income' ? 'Receita' : 'Despesa'}</Modal.Title>
+          <Modal.Title className="fw-bold">{editingTransaction ? 'Editar' : 'Nova'} {transactionType === 'income' ? 'Receita' : 'Despesa'}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body className="p-4">

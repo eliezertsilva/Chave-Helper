@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Form, Table, Badge, Row, Col, InputGroup, ListGroup } from 'react-bootstrap';
 import { FaSearch, FaShoppingCart, FaTrash, FaPlus, FaMinus, FaMoneyBillWave, FaBarcode, FaUser } from 'react-icons/fa';
+import { inventoryService, salesService } from '../../services/api';
 
 const Sales = () => {
-  // Mock Products
-  const products = [
-    { id: 1, name: 'Chave Pado 682', price: 5.50, stock: 150 },
-    { id: 2, name: 'Fechadura Yale', price: 850.00, stock: 5 },
-    { id: 3, name: 'Cadeado 30mm', price: 35.00, stock: 45 },
-    { id: 4, name: 'Chave Automotiva VW', price: 120.00, stock: 8 },
-    { id: 5, name: 'Serviço: Cópia Simples', price: 10.00, stock: 999 },
-    { id: 6, name: 'Serviço: Abertura', price: 150.00, stock: 999 },
-  ];
-
+  const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const response = await inventoryService.getAll();
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
+  };
 
   const addToCart = (product) => {
     setCart(prev => {
@@ -41,11 +48,42 @@ const Sales = () => {
     }));
   };
 
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+
+    setLoading(true);
+    try {
+      const items = cart.map(item => ({
+        productId: item.id,
+        quantity: item.quantity
+      }));
+
+      await salesService.createSale({
+        items,
+        paymentMethod: 'cash',
+        discount: parseFloat(discount) || 0,
+        clientId: selectedClient || null
+      });
+
+      alert('Venda finalizada com sucesso!');
+      setCart([]);
+      setDiscount(0);
+      setSelectedClient('');
+      loadProducts(); // Reload to update stock
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Erro ao finalizar venda';
+      alert(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const subtotal = cart.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
+  const total = subtotal - (parseFloat(discount) || 0);
 
   return (
     <div>
@@ -147,11 +185,17 @@ const Sales = () => {
               <div className="mt-auto bg-light p-4 border-top">
                 <div className="d-flex justify-content-between mb-2">
                   <span>Subtotal</span>
-                  <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+                  <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
-                 <div className="d-flex justify-content-between mb-4">
-                  <span>Desconto</span>
-                  <span className="text-success">- R$ 0,00</span>
+                <div className="mb-3">
+                  <Form.Label className="small">Desconto (R$)</Form.Label>
+                  <Form.Control 
+                    type="number" 
+                    step="0.01"
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                    placeholder="0,00"
+                  />
                 </div>
                 <div className="d-flex justify-content-between mb-4">
                   <h4 className="fw-bold">Total</h4>
@@ -159,10 +203,25 @@ const Sales = () => {
                 </div>
                 
                 <div className="d-grid gap-2">
-                   <Button variant="success" size="lg" disabled={cart.length === 0}>
-                     <FaMoneyBillWave className="me-2" /> Finalizar Venda
+                   <Button 
+                     variant="success" 
+                     size="lg" 
+                     disabled={cart.length === 0 || loading}
+                     onClick={handleCheckout}
+                   >
+                     <FaMoneyBillWave className="me-2" /> 
+                     {loading ? 'Processando...' : 'Finalizar Venda'}
                    </Button>
-                   <Button variant="outline-danger">Cancelar</Button>
+                   <Button 
+                     variant="outline-danger"
+                     onClick={() => {
+                       setCart([]);
+                       setDiscount(0);
+                       setSelectedClient('');
+                     }}
+                   >
+                     Cancelar
+                   </Button>
                 </div>
               </div>
             </Card.Body>

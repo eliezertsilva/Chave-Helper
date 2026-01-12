@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Form, Table, Badge, Row, Col, InputGroup, Modal } from 'react-bootstrap';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaTools, FaClock, FaCheckCircle, FaTimesCircle, FaChevronDown } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaTools, FaClock, FaCheckCircle, FaTimesCircle, FaBoxOpen } from 'react-icons/fa';
 import { servicesService, clientsService } from '../../services/api';
+import ServiceItemsModal from '../../components/ServiceItemsModal';
 
 const Services = () => {
   // Mock data
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showItemsModal, setShowItemsModal] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState(null);
   const [clients, setClients] = useState([]);
   const [formData, setFormData] = useState({
     description: '',
@@ -60,11 +63,45 @@ const Services = () => {
       await servicesService.updateStatus(id, newStatus);
       loadServices();
     } catch (error) {
-      alert('Erro ao atualizar status');
+      const errorMsg = error.response?.data?.message || 'Erro ao atualizar status';
+      alert(errorMsg);
     }
   };
 
+  const handleOpenItems = (serviceId) => {
+    setSelectedServiceId(serviceId);
+    setShowItemsModal(true);
+  };
+
+  const handleCloseItems = () => {
+    setShowItemsModal(false);
+    setSelectedServiceId(null);
+  };
+
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+
+  const filteredServices = services.filter(service => {
+    const matchesSearch = service.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         service.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         service.id.toString().includes(searchTerm);
+    const matchesStatus = statusFilter === '' || service.status === statusFilter;
+    const matchesDate = dateFilter === '' || service.date.startsWith(dateFilter);
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir esta OS?')) {
+      try {
+        // Assume delete method exists if not, we would add to api.js
+        await servicesService.delete(id);
+        loadServices();
+      } catch (error) {
+        alert('Erro ao excluir OS');
+      }
+    }
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -136,7 +173,7 @@ const Services = () => {
               </tr>
             </thead>
             <tbody>
-              {services.map((service) => (
+               {filteredServices.map((service) => (
                 <tr key={service.id}>
                   <td className="ps-4 fw-bold">#{service.id}</td>
                   <td>{service.client}</td>
@@ -158,8 +195,16 @@ const Services = () => {
                     </Form.Select>
                   </td>
                   <td className="text-end pe-4">
+                    <Button 
+                      variant="link" 
+                      className="text-primary p-1" 
+                      title="Gerenciar Produtos"
+                      onClick={() => handleOpenItems(service.id)}
+                    >
+                      <FaBoxOpen />
+                    </Button>
                     <Button variant="link" className="text-secondary p-1"><FaEdit /></Button>
-                    <Button variant="link" className="text-danger p-1"><FaTrash /></Button>
+                    <Button variant="link" className="text-danger p-1" onClick={() => handleDelete(service.id)}><FaTrash /></Button>
                   </td>
                 </tr>
               ))}
@@ -217,6 +262,13 @@ const Services = () => {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      <ServiceItemsModal
+        show={showItemsModal}
+        onHide={handleCloseItems}
+        serviceId={selectedServiceId}
+        onUpdate={loadServices}
+      />
     </div>
   );
 };

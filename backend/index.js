@@ -8,8 +8,11 @@ const setupSwagger = require('./config/swagger');
 const authRoutes = require('./routes/authRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const serviceItemRoutes = require('./routes/serviceItemRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const financeRoutes = require('./routes/financeRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
+const salesRoutes = require('./routes/salesRoutes');
 
 require('dotenv').config();
 
@@ -40,8 +43,11 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/service-items', serviceItemRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/sales', salesRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

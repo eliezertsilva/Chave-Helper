@@ -23,29 +23,29 @@ router.get('/', inventoryController.getAll);
 
 /**
  * @swagger
- * /api/inventory/{id}/stock:
- *   put:
- *     summary: Atualiza a quantidade em estoque de um produto
+ * /api/inventory:
+ *   post:
+ *     summary: Cadastra um novo produto
  *     tags: [Inventory]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               stock:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Estoque atualizado
  */
-router.put('/:id/stock', inventoryController.updateStock);
+router.post('/', inventoryController.create);
+
+/**
+ * @swagger
+ * /api/inventory/{id}:
+ *   put:
+ *     summary: Atualiza um produto
+ *     tags: [Inventory]
+ */
+router.put('/:id', inventoryController.update);
+
+/**
+ * @swagger
+ * /api/inventory/{id}:
+ *   delete:
+ *     summary: Exclui um produto
+ *     tags: [Inventory]
+ */
+router.delete('/:id', inventoryController.delete);
 
 module.exports = router;

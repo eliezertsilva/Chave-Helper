@@ -73,4 +73,40 @@ router.post('/', servicesController.create);
  */
 router.put('/:id/status', servicesController.updateStatus);
 
+/**
+ * @swagger
+ * /api/services/{id}:
+ *   put:
+ *     summary: Atualiza uma OS
+ *     tags: [Services]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: OS atualizada
+ */
+router.put('/:id', servicesController.update);
+
+/**
+ * @swagger
+ * /api/services/{id}:
+ *   delete:
+ *     summary: Exclui uma OS
+ *     tags: [Services]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: OS excluída
+ */
+router.delete('/:id', servicesController.delete);
+
 module.exports = router;
