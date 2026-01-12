@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Form, Table, Badge, Row, Col, InputGroup, Spinner } from 'react-bootstrap';
+import { Card, Button, Form, Table, Badge, Row, Col, InputGroup, Spinner, Modal } from 'react-bootstrap';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import { clientsService } from '../../services/api';
 
@@ -7,6 +7,17 @@ const Clients = () => {
   // Mock data
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'PF',
+    document: '',
+    phone: '',
+    email: '',
+    address: ''
+  });
 
   useEffect(() => {
     loadClients();
@@ -23,7 +34,51 @@ const Clients = () => {
     }
   };
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const handleShow = (client = null) => {
+    if (client) {
+      setEditingClient(client);
+      setFormData({
+        name: client.name,
+        type: client.type,
+        document: client.document,
+        phone: client.phone,
+        email: client.email || '',
+        address: client.address || ''
+      });
+    } else {
+      setEditingClient(null);
+      setFormData({ name: '', type: 'PF', document: '', phone: '', email: '', address: '' });
+    }
+    setShowModal(true);
+  };
+
+  const handleClose = () => setShowModal(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingClient) {
+        await clientsService.update(editingClient.id, formData);
+      } else {
+        await clientsService.create(formData);
+      }
+      loadClients();
+      handleClose();
+    } catch (error) {
+      alert('Erro ao salvar cliente');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
+      try {
+        await clientsService.delete(id);
+        loadClients();
+      } catch (error) {
+        alert('Erro ao excluir cliente');
+      }
+    }
+  };
 
   return (
     <div>
@@ -32,7 +87,7 @@ const Clients = () => {
           <h1 className="page-title">Gestão de Clientes</h1>
           <p className="text-muted">Gerencie sua base de clientes e históricos</p>
         </div>
-        <Button variant="primary" className="d-flex align-items-center gap-2">
+        <Button variant="primary" className="d-flex align-items-center gap-2" onClick={() => handleShow()}>
           <FaPlus /> Novo Cliente
         </Button>
       </div>
@@ -85,7 +140,7 @@ const Clients = () => {
                     <div className="fw-bold">{client.name}</div>
                     <small className="text-muted">{client.type}</small>
                   </td>
-                  <td>{client.doc}</td>
+                  <td>{client.document}</td>
                   <td>
                     <div className="d-flex flex-column gap-1">
                       <div className="d-flex align-items-center gap-2 text-muted small">
@@ -103,8 +158,8 @@ const Clients = () => {
                     {client.status === 'debt' && <Badge bg="danger">Inadimplente</Badge>}
                   </td>
                   <td className="text-end pe-4">
-                    <Button variant="link" className="text-secondary p-1"><FaEdit /></Button>
-                    <Button variant="link" className="text-danger p-1"><FaTrash /></Button>
+                    <Button variant="link" className="text-secondary p-1" onClick={() => handleShow(client)}><FaEdit /></Button>
+                    <Button variant="link" className="text-danger p-1" onClick={() => handleDelete(client.id)}><FaTrash /></Button>
                   </td>
                 </tr>
               ))}
@@ -112,6 +167,87 @@ const Clients = () => {
           </Table>
         </Card.Body>
       </Card>
+
+      <Modal show={showModal} onHide={handleClose} size="lg">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">{editingClient ? 'Editar Cliente' : 'Novo Cliente'}</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body className="p-4">
+            <Row className="g-3">
+              <Col md={8}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold">Nome Completo / Razão Social</Form.Label>
+                  <Form.Control 
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold">Tipo</Form.Label>
+                  <Form.Select 
+                    value={formData.type}
+                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  >
+                    <option value="PF">Pessoa Física</option>
+                    <option value="PJ">Pessoa Jurídica</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold">CPF / CNPJ</Form.Label>
+                  <Form.Control 
+                    required
+                    value={formData.document}
+                    onChange={(e) => setFormData({...formData, document: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold">Telefone / WhatsApp</Form.Label>
+                  <Form.Control 
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold">E-mail</Form.Label>
+                  <Form.Control 
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold">Endereço Completo</Form.Label>
+                  <Form.Control 
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer className="border-0 pt-0 p-4">
+            <Button variant="link" className="text-muted text-decoration-none" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit" className="px-4 fw-bold">
+              {editingClient ? 'Salvar Alterações' : 'Cadastrar Cliente'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </div>
   );
 };

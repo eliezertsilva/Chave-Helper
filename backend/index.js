@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const financeRoutes = require('./routes/financeRoutes');
 
 require('dotenv').config();
 
@@ -40,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/finance', financeRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

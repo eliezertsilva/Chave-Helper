@@ -22,18 +22,28 @@ export const authService = {
 
 export const clientsService = {
   getAll: () => api.get('/clients'),
+  getById: (id) => api.get(`/clients/${id}`),
+  create: (data) => api.post('/clients', data),
+  update: (id, data) => api.put(`/clients/${id}`, data),
+  delete: (id) => api.delete(`/clients/${id}`),
 };
 
 export const servicesService = {
   getAll: () => api.get('/services'),
+  create: (data) => api.post('/services', data),
+  updateStatus: (id, status) => api.put(`/services/${id}/status`, { status }),
 };
 
 export const financeService = {
+  getAll: () => api.get('/finance'),
   getSummary: () => api.get('/finance/summary'),
+  create: (data) => api.post('/finance', data),
 };
 
 export const inventoryService = {
   getAll: () => api.get('/inventory'),
+  create: (data) => api.post('/inventory', data),
+  updateStock: (id, stock) => api.put(`/inventory/${id}/stock`, { stock }),
 };
 
 export default api;
